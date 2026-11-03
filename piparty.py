@@ -1327,11 +1327,7 @@ if __name__ == "__main__":
     pairing_notice = runtime_platform.controller_pairing_notice()
     if pairing_notice:
         print(pairing_notice)
-    if platform == "linux" or platform == "linux2":
-        print("updating asound")
-        os.popen("sudo ./update_asound.sh")
     print("starting audio")
-    time.sleep(1)
     InitAudio()
     piparty = Menu()
     webui_browser.start(webui.web_urls()[0], piparty.ns.webui_launch_id, piparty.web_proc.is_alive)

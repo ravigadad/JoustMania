@@ -1,8 +1,15 @@
+import sys
 import unittest
+from unittest import mock
 
 import numpy
 
-from piaudio import resample_stereo_s16
+# PyAudio is installed only in the Windows build, and psmoveapi (imported through
+# common) only where JoustMania's setup has built it. Neither is used by these tests.
+sys.modules.setdefault("pyaudio", mock.MagicMock())
+sys.modules.setdefault("psmoveapi", mock.MagicMock())
+
+from windows_audio import resample_stereo_s16
 
 
 class StereoResamplingTest(unittest.TestCase):

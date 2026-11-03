@@ -21,7 +21,7 @@ Cool Stuffs!
 * 18+ Player support
 * Super easy setup
 * Runs in Headless mode, no screen required
-* Audio is output directly through the headphone jack, no audio device/usb plugin is necessary.
+* Audio plays through a USB audio adapter, a Pi 4's headphone jack, or HDMI, with no audio configuration needed. See [Audio](docs/audio/README.md) for how the output is chosen.
 * Optional web interface, view status and change game settings with your phone
 * Custom music support, play with your own music
 * Convention mode, no manual instructions needed, the game plays itself and switches between game modes
@@ -155,7 +155,7 @@ Confirming the popup saves the setting and reboots the Pi; Cancel changes nothin
 Controller pairings and USB adapter settings are preserved. A failed save does not trigger a reboot.
 The control uses Python 3 and systemctl, already provided by the Pi setup.
 
-You can now disconnect the hdmi cable and run JoustMania in headless mode. JoustMania will automatically boot up on restart, menu music should start playing once the pi boots up. Note audio will only play out of HDMI when plugged into a monitor, and only out of the audio jack when unpluged from a monitor.
+You can now disconnect the hdmi cable and run JoustMania in headless mode. JoustMania will automatically boot up on restart, menu music should start playing once the pi boots up. Without a USB audio adapter or a Pi 4 headphone jack, audio plays through HDMI, so it stops when the HDMI cable is disconnected. [Audio](docs/audio/README.md) describes how the output is chosen.
 
 Windows development build
 ---------------------------
