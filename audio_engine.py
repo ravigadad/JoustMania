@@ -46,6 +46,7 @@ class AudioEngine:
         self.loader = SampleLoader()
         self.output = None
         self.next_output_attempt = time.monotonic()
+        self.last_output_error = None
         self.effect_samples = {}
         self.loading_effects = set()
         self.pending_effect_plays = {}
@@ -176,6 +177,7 @@ class AudioEngine:
         self._close_output()
         self.configured_card = card
         self.next_output_attempt = time.monotonic()
+        self.last_output_error = None
 
     def _current_output(self):
         if self.output is None and time.monotonic() >= self.next_output_attempt:
@@ -183,8 +185,13 @@ class AudioEngine:
             try:
                 self.output = AlsaOutput(card, period_frames=BLOCK_FRAMES)
                 logger.info("Audio output opened on %s", card or "the system default device")
+                self.last_output_error = None
             except OutputError as error:
-                logger.error("%s; retrying in %s seconds", error, OUTPUT_RETRY_SECONDS)
+                # A chosen output can stay unavailable for hours, so an unchanged
+                # failure is logged once rather than on every retry.
+                if str(error) != self.last_output_error:
+                    logger.error("%s; retrying every %s seconds", error, OUTPUT_RETRY_SECONDS)
+                    self.last_output_error = str(error)
                 self.next_output_attempt = time.monotonic() + OUTPUT_RETRY_SECONDS
         return self.output
 

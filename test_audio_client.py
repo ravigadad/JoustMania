@@ -47,6 +47,14 @@ class SendTest(unittest.TestCase):
             audio_client._send(("fake_command",))
 
 
+class SetOutputTest(unittest.TestCase):
+    def test_asks_the_engine_to_switch_to_the_card(self):
+        with mock.patch.object(audio_client, "_send") as send:
+            audio_client.set_output("fake-card")
+
+        send.assert_called_once_with(("set_output", "fake-card"))
+
+
 class AudioTest(unittest.TestCase):
     def setUp(self):
         patcher = mock.patch.object(audio_client, "_send")

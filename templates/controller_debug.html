@@ -191,6 +191,20 @@ button.role-toggle, button.controller-action { font-size: 14px; line-height: 1.2
         <p class="diagnostic-note">Changing internal Bluetooth restarts the Pi and stops the current game. You will be asked to confirm. Controller pairings and USB adapter settings are preserved.</p>
         <p id="internal-bt-error" role="alert">{{ internal_bluetooth.error }}</p>
     </section>{% endif %}
+    {% if audio_output.supported %}<section aria-labelledby="audio-output-heading">
+        <h3 id="audio-output-heading">Audio Output</h3>
+        <p id="audio-output-status" role="status">{{ audio_output.message }}</p>
+        <form id="audio-output-form" action="/debug/audio-output" method="POST">
+            <select id="audio-output-card" name="card" aria-label="Audio output">
+                <option value=""{% if not audio_output.selected %} selected{% endif %}>Automatic</option>
+                {% for output in audio_output.outputs %}<option value="{{ output.card }}"{% if output.card == audio_output.selected %} selected{% endif %}>{{ output.label }}</option>
+                {% endfor %}
+            </select>
+            <button id="audio-output-button" type="submit">Use This Output</button>
+        </form>
+        <p class="diagnostic-note">Automatic uses a USB audio adapter when one is connected, then a Pi 4's headphone jack, then the system default, which is HDMI on a Pi 5. A chosen output stays chosen: if it's disconnected, nothing plays until it's back. Switching takes effect right away without stopping the game.</p>
+        <p id="audio-output-error" role="alert"></p>
+    </section>{% endif %}
     <form action="/debug/reset-bluetooth" method="POST"
           onsubmit="return confirm('Reset Bluetooth controllers? This stops the current game, removes saved PS Move connections, and restarts JoustMania.');">
         <button type="submit" class="danger-button" {% if not maintenance.reset.available %}disabled{% endif %}>Reset Bluetooth Controllers</button>
@@ -295,6 +309,30 @@ button.role-toggle, button.controller-action { font-size: 14px; line-height: 1.2
             internalBluetoothPending = false;
             document.getElementById('internal-bt-error').textContent = error.message;
             document.getElementById('internal-bt-button').disabled = false;
+        }
+    });
+    // The polled state updates only the status line, so a choice made in the list
+    // isn't reset before it's applied.
+    function renderAudioOutput(state) {
+        if (!state || !state.supported || !document.getElementById('audio-output-form')) return;
+        document.getElementById('audio-output-status').textContent = state.message;
+    }
+    document.getElementById('audio-output-form')?.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const button = document.getElementById('audio-output-button');
+        const card = document.getElementById('audio-output-card').value;
+        button.disabled = true;
+        document.getElementById('audio-output-error').textContent = '';
+        try {
+            const response = await fetch('/debug/audio-output', {method: 'POST', body: new URLSearchParams({card: card})});
+            const state = await response.json();
+            if (!response.ok) throw new Error(state.error || 'Changing the audio output failed.');
+            document.getElementById('audio-output-card').value = state.selected;
+            renderAudioOutput(state);
+        } catch (error) {
+            document.getElementById('audio-output-error').textContent = error.message;
+        } finally {
+            button.disabled = false;
         }
     });
     let hotspotPending = false;
@@ -517,6 +555,7 @@ button.role-toggle, button.controller-action { font-size: 14px; line-height: 1.2
         fetch('/debug/data', {cache: 'no-store'}).then(function (response) { return response.json(); }).then(function (data) {
             renderHotspot(data.access_point);
             renderInternalBluetooth(data.internal_bluetooth);
+            renderAudioOutput(data.audio_output);
             renderWindowsPairing(data.windows_pairing);
             if (data.diagnostics) {
                 document.getElementById('diagnostics-error').textContent = data.diagnostics.error || '';

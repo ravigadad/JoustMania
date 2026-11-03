@@ -14,6 +14,14 @@ JoustMania doesn't need an `/etc/asound.conf`. When one exists, it only affects 
 
 The output is checked whenever the sound card is opened: at startup, and every few seconds while no card can be opened. An adapter plugged in after startup is used only after JoustMania restarts or loses its current output.
 
+### Choosing an output
+
+The **Audio Output** section of the web UI's debug page lists every sound card on the Pi and shows which one is playing. Choosing one switches to it straight away, without stopping a game, and saves it as `audio_output` in `joustsettings.yaml`, so it's used again after a restart. **Automatic** goes back to the order above.
+
+A chosen output stays chosen. If it can't be opened, JoustMania plays nothing and keeps trying to open it every few seconds, then resumes on it once it's back. Meanwhile the debug page says it's waiting for that output. The log records the failure once, and again only if the error changes or after the output has opened in between.
+
+An HDMI port can be opened only while a display is connected to it. The Pi's HDMI driver refuses to open a port with nothing attached, so choosing an empty port leaves JoustMania waiting.
+
 ## One process owns the sound card
 
 On Linux, a single audio engine process opens the sound card and mixes everything the game plays: music, sound effects and robot speech. Game code asks for sound through `piaudio` (`Audio`, `Music` and `speak`), which sends requests to the engine over a queue. `InitAudio()` starts the engine, and every process forked after that can send it requests.

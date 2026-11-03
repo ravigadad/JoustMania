@@ -340,6 +340,14 @@ class SetOutputTest(EngineTestCase):
         self.assertEqual(self.engine.configured_card, "fake-new-card")
         self.assertEqual(self.engine.next_output_attempt, 100.0)
 
+    def test_logs_the_first_failure_to_open_the_new_card(self):
+        audio_engine.AlsaOutput.side_effect = OutputError("fake-open-failure")
+        self.engine._current_output()
+
+        self.engine._set_output("fake-new-card")
+        with self.assertLogs(audio_engine.logger, level="ERROR"):
+            self.engine._current_output()
+
 
 class CurrentOutputTest(EngineTestCase):
     def test_opens_the_chosen_card_when_due_and_logs_it(self):
@@ -376,6 +384,34 @@ class CurrentOutputTest(EngineTestCase):
         self.assertIsNone(result)
         self.assertIn("fake-open-failure", logs.output[0])
         self.assertEqual(self.engine.next_output_attempt, 100.0 + audio_engine.OUTPUT_RETRY_SECONDS)
+
+    def test_does_not_log_the_same_failure_again(self):
+        audio_engine.AlsaOutput.side_effect = OutputError("fake-open-failure")
+        self.engine._current_output()
+        self.engine.next_output_attempt = 100.0
+
+        with self.assertNoLogs(audio_engine.logger, level="ERROR"):
+            self.engine._current_output()
+
+    def test_logs_a_failure_that_differs_from_the_last_one(self):
+        audio_engine.AlsaOutput.side_effect = [OutputError("fake-first-failure"), OutputError("fake-second-failure")]
+        self.engine._current_output()
+        self.engine.next_output_attempt = 100.0
+
+        with self.assertLogs(audio_engine.logger, level="ERROR") as logs:
+            self.engine._current_output()
+
+        self.assertIn("fake-second-failure", logs.output[0])
+
+    def test_logs_a_failure_again_after_the_output_has_opened(self):
+        audio_engine.AlsaOutput.side_effect = [OutputError("fake-open-failure"), "fake-output", OutputError("fake-open-failure")]
+        self.engine._current_output()
+        self.engine.next_output_attempt = 100.0
+        self.engine._current_output()
+        self.engine.output = None
+
+        with self.assertLogs(audio_engine.logger, level="ERROR"):
+            self.engine._current_output()
 
     def test_does_not_retry_before_the_scheduled_time(self):
         self.engine.next_output_attempt = 100.5

@@ -27,6 +27,11 @@ def InitAudio():
     multiprocessing.Process(target=audio_engine.run_engine, args=(_commands, None), daemon=True).start()
 
 
+def set_output(card):
+    """Switches the engine to an ALSA card id, or to the automatic choice for None."""
+    _send(("set_output", card))
+
+
 def _send(command):
     if _commands is None:
         raise RuntimeError("InitAudio() must run before any sound is played")

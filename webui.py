@@ -16,15 +16,18 @@ import logging
 import runtime_platform
 import bluetooth_diagnostics
 import windows_pairing
+import audio_output_setting
 from access_point import access_point
 from internal_bluetooth import internal_bluetooth
 from system_power import request_system_power
 
 if platform == "linux" or platform == "linux2":
+    import audio_client
     import bluetooth_roles
     import jm_dbus
     import psmove_dbus
 else:
+    audio_client = None
     bluetooth_roles = None
     psmove_dbus = None
 
@@ -124,6 +127,7 @@ class WebUI():
         self.app.add_url_rule('/debug/controller-role', 'controller_role', self.change_controller_role, methods=['POST'])
         self.app.add_url_rule('/debug/access-point', 'access_point', self.change_access_point, methods=['POST'])
         self.app.add_url_rule('/debug/internal-bluetooth', 'internal_bluetooth', self.change_internal_bluetooth, methods=['POST'])
+        self.app.add_url_rule('/debug/audio-output', 'audio_output', self.change_audio_output, methods=['POST'])
         self.app.add_url_rule(
             '/debug/reset-bluetooth',
             'reset_bluetooth',
@@ -209,6 +213,7 @@ class WebUI():
             "controllers": self._controller_debug_data(),
             "access_point": access_point.status(),
             "internal_bluetooth": internal_bluetooth.status(),
+            "audio_output": self._audio_output_status(),
             "pairing": pairing_plan.status(self.ns),
             "windows_pairing": windows_pairing.status(self.ns),
             "diagnostics": bluetooth_diagnostics.platform_status(),
@@ -290,6 +295,24 @@ class WebUI():
         except RuntimeError as error:
             return {'error': str(error)}, 409
         return internal_bluetooth.status(), 202
+
+    def change_audio_output(self):
+        if not runtime_platform.is_linux():
+            return {'error': 'Choosing the audio output is only available on Linux.'}, 409
+        card = request.form.get('card', '')
+        if card and card not in [output['card'] for output in audio_output_setting.list_outputs()]:
+            return {'error': f'No audio output named {card} is connected.'}, 400
+        settings = self.ns.settings
+        settings['audio_output'] = card or None
+        self.ns.settings = settings
+        self._save_settings()
+        audio_client.set_output(card or None)
+        return self._audio_output_status()
+
+    def _audio_output_status(self):
+        # The test harness and the standalone WebUI build a namespace without settings.
+        settings = getattr(self.ns, 'settings', {})
+        return audio_output_setting.status(settings.get('audio_output'))
 
     def change_access_point(self):
         try:
@@ -513,6 +536,7 @@ class WebUI():
             'controller_debug.html',
             access_point=access_point.status(),
             internal_bluetooth=internal_bluetooth.status(),
+            audio_output=self._audio_output_status(),
             pairing=pairing_plan.status(self.ns),
             windows_pairing=windows_pairing.status(self.ns),
             diagnostics=bluetooth_diagnostics.platform_status(),
@@ -606,14 +630,16 @@ class WebUI():
             temp_settings['random_modes'] = [common.Games.JoustFFA.name]
 
         self.ns.settings = temp_settings
-
-        with open(common.SETTINGSFILE,'w') as yaml_file:
-            yaml.dump(self.ns.settings,yaml_file)
+        self._save_settings()
 
         if colors_are_good:
             flash('Settings updated!')
         else:
             flash('Duplicate color lock colors! Other settings saved.')
+
+    def _save_settings(self):
+        with open(common.SETTINGSFILE,'w') as yaml_file:
+            yaml.dump(self.ns.settings,yaml_file)
 
     #@app.route('/rand<num_teams>')
     def randomize_teams(self,num_teams):

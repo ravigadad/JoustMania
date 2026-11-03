@@ -146,6 +146,7 @@ class Color(Enum):
 
 REQUIRED_SETTINGS = [
     'play_audio',
+    'audio_output',
     'move_can_be_admin',
     'current_game',
     'enforce_minimum',

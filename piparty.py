@@ -57,6 +57,7 @@ import logging.config
 import setproctitle
 
 if platform == "linux" or platform == "linux2":
+    import audio_client
     import dbus
     import jm_dbus
     import pair
@@ -363,6 +364,9 @@ class Menu():
         self.command_from_web = ''
         self.initialize_settings()
         self.update_settings_file() # Update settings from joustmania.yaml
+        # The engine starts on the automatic output before settings are loaded.
+        if platform in ("linux", "linux2") and self.ns.settings['audio_output']:
+            audio_client.set_output(self.ns.settings['audio_output'])
 
         self.admin_options = ["random_team_size","force_all_start"]
         self.admin_control_option = 0
@@ -940,6 +944,7 @@ class Menu():
             'random_modes': [Games.JoustFFA.name,Games.JoustRandomTeams.name,Games.Werewolf.name,Games.Swapper.name],
             'current_game': Games.JoustFFA.name,
             'play_audio': True,
+            'audio_output': None,
             'menu_voice': 'ivy',
             'move_can_be_admin': True,
             'enforce_minimum': True,
