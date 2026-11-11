@@ -2,8 +2,7 @@
 
 # Prevent apt from prompting us about restarting services.
 export DEBIAN_FRONTEND=noninteractive
-HOMENAME=`who | head -n1 | cut -d " " -f1`
-HOMEDIR=/home/$HOMENAME
+source "$(dirname "$(readlink -f "$0")")/install_paths.sh"
 cd $HOMEDIR
 
 #This is needed to hear espeak with sudo (adjusting asound.conf)

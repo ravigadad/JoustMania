@@ -8,11 +8,9 @@ if [ $UID -ne 0 ]; then
   exec sudo $0
 fi
 
-#sets the username of the system, supervisord does not have a login
-#so we need to use the who command. 
-HOMENAME=`who | head -n1 | cut -d " " -f1`
+source "$(dirname "$(readlink -f "$0")")/install_paths.sh"
 
-export HOME="/home/$HOMENAME/JoustMania"
-export PSMOVEAPI_LIBRARY_PATH="/home/$HOMENAME/psmoveapi/build"
-export PYTHONPATH="/home/$HOMENAME/psmoveapi/bindings/python"
-/home/$HOMENAME/JoustMania/venv/bin/python3 /home/$HOMENAME/JoustMania/webui.py
+export HOME="$APP_DIR"
+export PSMOVEAPI_LIBRARY_PATH="$HOMEDIR/psmoveapi/build"
+export PYTHONPATH="$HOMEDIR/psmoveapi/bindings/python"
+"$APP_DIR/venv/bin/python3" "$APP_DIR/webui.py"

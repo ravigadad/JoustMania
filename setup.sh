@@ -3,8 +3,13 @@
 setup() {
     # Prevent apt from prompting us about restarting services.
     export DEBIAN_FRONTEND=noninteractive
-    HOMENAME=`logname`
-    HOMEDIR=/home/$HOMENAME
+    source "$(dirname "$(readlink -f "$0")")/install_paths.sh"
+    # A fresh clone made with sudo belongs to root until the chown below, so the
+    # account that ran sudo takes precedence over the checkout's owner.
+    if [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ]; then
+        HOMENAME="$SUDO_USER"
+        HOMEDIR="$(getent passwd "$HOMENAME" | cut -d: -f6)"
+    fi
     cd $HOMEDIR
 
     #This was causing some errors updating below (stuck on looking for font directory)

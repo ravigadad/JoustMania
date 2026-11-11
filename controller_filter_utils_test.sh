@@ -5,9 +5,8 @@ if [ $UID -ne 0 ]; then
   exec sudo $0
 fi
 
-#sets the username, supervisord does not have a login when running joustmania
-HOMENAME=`who | head -n1 | cut -d " " -f1`
-export HOME="/home/$HOMENAME/JoustMania"
-export PSMOVEAPI_LIBRARY_PATH="/home/$HOMENAME/psmoveapi/build"
-export PYTHONPATH="/home/$HOMENAME/psmoveapi/bindings/python"
-exec /home/$HOMENAME/JoustMania/venv/bin/python3 /home/$HOMENAME/JoustMania/controller_filter_utils.py
+source "$(dirname "$(readlink -f "$0")")/install_paths.sh"
+export HOME="$APP_DIR"
+export PSMOVEAPI_LIBRARY_PATH="$HOMEDIR/psmoveapi/build"
+export PYTHONPATH="$HOMEDIR/psmoveapi/bindings/python"
+exec "$APP_DIR/venv/bin/python3" "$APP_DIR/controller_filter_utils.py"
