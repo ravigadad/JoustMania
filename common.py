@@ -160,3 +160,15 @@ REQUIRED_SETTINGS = [
     'random_team_size',
     'force_all_start',
 ]
+
+def known_settings(settings):
+    """Drops keys this version doesn't use, such as a setting from another branch."""
+    return {key: value for key, value in settings.items() if key in REQUIRED_SETTINGS}
+
+
+def random_mode_choices(modes):
+    """Keeps only modes that random play can pick, falling back to Joust FFA."""
+    unpickable = {Games.JoustTeams.name, Games.Random.name}
+    known = {game.name for game in Games}
+    choices = [mode for mode in modes if mode in known and mode not in unpickable]
+    return choices or [Games.JoustFFA.name]

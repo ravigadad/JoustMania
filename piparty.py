@@ -968,18 +968,8 @@ class Menu():
                 if len(colorset) != len(set(colorset)):
                     temp_colors[key] = temp_settings['color_lock_choices'][key]
 
-            for setting in file_settings.keys():
-                if setting not in common.REQUIRED_SETTINGS:
-                    file_settings.pop(setting)
-
-            for game in [Games.JoustTeams,Games.Random]:
-                if game.name in file_settings['random_modes']:
-                    file_settings['random_modes'].remove(game.name)
-            for game in file_settings['random_modes']:
-                if game not in [game.name for game in Games]:
-                    file_settings['random_modes'].remove(game)
-            if file_settings['random_modes'] == []:
-                file_settings['random_modes'] = [Games.JoustFFA.name]
+            file_settings = common.known_settings(file_settings)
+            file_settings['random_modes'] = common.random_mode_choices(file_settings['random_modes'])
 
             temp_settings.update(file_settings)
             temp_settings['color_lock_choices'] = temp_colors
