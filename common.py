@@ -146,6 +146,7 @@ class Color(Enum):
 
 REQUIRED_SETTINGS = [
     'play_audio',
+    'update_local_changes',
     'move_can_be_admin',
     'current_game',
     'enforce_minimum',
@@ -160,6 +161,7 @@ REQUIRED_SETTINGS = [
     'random_team_size',
     'force_all_start',
 ]
+
 
 def known_settings(settings):
     """Drops keys this version doesn't use, such as a setting from another branch."""

@@ -24,7 +24,8 @@ class ExitPageTest(unittest.TestCase):
         self.ns = SimpleNamespace(webui_launch_id='mine', status={}, settings={
             'color_lock_choices': {2: ['Magenta', 'Green'], 3: ['Orange', 'Turquoise', 'Purple'],
                                    4: ['Yellow', 'Green', 'Blue', 'Purple']},
-            'sensitivity': 2, 'red_on_kill': True, 'random_team_size': 4, 'force_all_start': False})
+            'sensitivity': 2, 'red_on_kill': True, 'random_team_size': 4, 'force_all_start': False,
+            'update_local_changes': 'skip'})
         self.ui = webui.WebUI(ns=self.ns, exit_event=self.exit_event)
         self.client = self.ui.app.test_client()
         patcher = mock.patch.object(webui.runtime_platform, 'is_proton', return_value=True)

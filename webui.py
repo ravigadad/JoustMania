@@ -16,6 +16,7 @@ import logging
 import runtime_platform
 import bluetooth_diagnostics
 import windows_pairing
+import update
 from access_point import access_point
 from internal_bluetooth import internal_bluetooth
 from system_power import request_system_power
@@ -80,6 +81,11 @@ class SettingsForm(Form):
     random_teams = BooleanField('Randomize teams each round')
     force_all_start = BooleanField('When force starting start with all or only those who pushed trigger')
     random_team_size = SelectField('size of random teams',choices=[(2,'2'),(3,'3'),(4,'4'),(5,'5'),(6,'6')],coerce=int)
+    update_local_changes = SelectField('Updating when files on this machine have been edited', choices=[
+        (update.SKIP_LOCAL_CHANGES, "Don't update"),
+        (update.KEEP_LOCAL_CHANGES, "Update if the edits don't conflict"),
+        (update.DISCARD_LOCAL_CHANGES, 'Discard the edits and update'),
+    ])
 
 class WebUI():
     def __init__(self, command_queue=Queue(), ns=None, controller_manager_instance=None, exit_event=None):
@@ -579,6 +585,7 @@ class WebUI():
                 red_on_kill = self.ns.settings['red_on_kill'],
                 random_team_size = self.ns.settings['random_team_size'],
                 force_all_start = self.ns.settings['force_all_start'],
+                update_local_changes = self.ns.settings['update_local_changes'],
                 color_lock_choices = temp_colors
             )
             return render_template('settings.html', form=settingsForm, settings=self.ns.settings)

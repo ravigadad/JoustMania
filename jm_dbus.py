@@ -2,9 +2,13 @@
 private system-bus connection because inherited connections can fail after
 multiprocessing forks or BlueZ restarts during controller pairing.
 """
+import logging
 import os
+import subprocess
 import dbus
 from xml.etree import ElementTree
+
+logger = logging.getLogger(__name__)
 
 BUS = None
 BUS_PID = None
@@ -159,6 +163,16 @@ def enable_adapter(hci):
 def rfkill_unblock(hci):
     hci_id = os.popen('rfkill list | grep {0} | cut -d ":" -f 1'.format(hci)).read().split('\n')[0]
     os.popen('rfkill unblock {0}'.format(hci_id)).read()
+
+def reset_adapter(hci):
+    """Unblocks Bluetooth and resets the HCI, for when BlueZ can't power it on"""
+    _run_logged(["sudo", "rfkill", "unblock", "bluetooth"])
+    _run_logged(["sudo", "hciconfig", hci, "reset"])
+
+def _run_logged(command):
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        logger.warning("%s failed: %s", " ".join(command), result.stderr.strip())
 
 def disable_adapter(hci):
     """Set the HCI's Powered attribute to false"""

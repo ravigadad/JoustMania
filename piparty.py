@@ -369,8 +369,8 @@ class Menu():
 
         # Check for git update
         if platform == "linux" or platform == "linux2":
-            self.big_update = update.check_for_update(self.ns.settings['menu_voice'])
-            self.git_hash = update.run_command("git rev-parse HEAD")[:7]
+            self.big_update = update.check_for_update(self.ns.settings['menu_voice'], self.ns.settings['update_local_changes'])
+            self.git_hash = update.current_commit()
         else:
             self.git_hash = "0000000"
 
@@ -520,8 +520,7 @@ class Menu():
                     except:
                         print(f"could not enable bluetooth adapter, trying to reset {hci}")
                         #bluetooth might be off, try to unblock it, and start up again
-                        update.run_command("sudo rfkill unblock bluetooth")
-                        update.run_command(f"sudo hciconfig {hci} reset")
+                        jm_dbus.reset_adapter(hci)
                         #try enable bt scanning again!
                         continue
                     break
@@ -763,7 +762,7 @@ class Menu():
         for move, move_opt in self.menu_opts.items():
             if move_opt[Opts.SELECTION.value] == Selections.update.value:
                 if self.big_update:
-                    update.big_update(self.ns.settings['menu_voice'])
+                    update.big_update(self.ns.settings['menu_voice'], self.ns.settings['update_local_changes'])
                     self.big_update = False
 
     # This checks if there is a charging controller
@@ -941,6 +940,7 @@ class Menu():
             'current_game': Games.JoustFFA.name,
             'play_audio': True,
             'menu_voice': 'ivy',
+            'update_local_changes': update.SKIP_LOCAL_CHANGES,
             'move_can_be_admin': True,
             'enforce_minimum': True,
             'red_on_kill': True,

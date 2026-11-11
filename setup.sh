@@ -131,4 +131,7 @@ setup() {
     (sleep 2; sudo reboot) &
 }
 
+# Without pipefail the script's exit status would be tee's, hiding a failed setup
+# from update.big_update.
+set -o pipefail
 setup $1 2>&1 | tee setup.log

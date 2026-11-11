@@ -180,7 +180,7 @@ the Python runtime, web templates and static files, audio, `psmoveapi.dll`,
 
 Update Joust Mania
 ---------------------------
-Joustmania will auto update when started and connected to the internet. Sometimes there is a large update, it will say so, then you can press the start and select buttons on a controller to start this update, wait until the pi reboots. If you have the AP enabled, you may need to disable it first to gain access to the internet.
+Joustmania checks for updates each time it starts while connected to the internet. Small updates are applied straight away. A large update is announced and starts when you press the start and select buttons on a controller, then the Pi reboots. See [Updates](docs/updates/README.md) for which branch it follows, what happens to files edited on the Pi, and where to look when an update doesn't happen.
 
 Pairing controllers
 ---------------------------
