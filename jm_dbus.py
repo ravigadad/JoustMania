@@ -2,9 +2,13 @@
 private system-bus connection because inherited connections can fail after
 multiprocessing forks or BlueZ restarts during controller pairing.
 """
+import logging
 import os
+import subprocess
 import dbus
 from xml.etree import ElementTree
+
+logger = logging.getLogger(__name__)
 
 BUS = None
 BUS_PID = None
@@ -149,16 +153,36 @@ def enable_adapter(hci):
             iface.Set('org.bluez.Adapter1', 'Powered', True)
             return True
         except dbus.exceptions.DBusException as e:
-            if "rfkill" in str(e):
-                rfkill_unblock(hci)
-                # Recurse after unblocking the bluetooth adapter
-                return enable_adapter(hci)
-            else:
-                raise e
+            if "rfkill" not in str(e) or not rfkill_unblock(hci):
+                raise
+            # One retry only: if the adapter is still blocked, the caller's reset handles it.
+            iface.Set('org.bluez.Adapter1', 'Powered', True)
+            return True
 
 def rfkill_unblock(hci):
-    hci_id = os.popen('rfkill list | grep {0} | cut -d ":" -f 1'.format(hci)).read().split('\n')[0]
-    os.popen('rfkill unblock {0}'.format(hci_id)).read()
+    """Unblocks the radio rfkill lists for the HCI. Returns False, after logging why,
+    if that didn't work."""
+    listing = subprocess.run(["rfkill", "list"], capture_output=True, text=True)
+    if listing.returncode != 0:
+        logger.warning("Couldn't list rfkill radios: %s", listing.stderr.strip())
+        return False
+    rfkill_id = _rfkill_id(listing.stdout, hci)
+    if rfkill_id is None:
+        logger.warning("rfkill lists no radio for %s", hci)
+        return False
+    unblock = subprocess.run(["rfkill", "unblock", rfkill_id], capture_output=True, text=True)
+    if unblock.returncode != 0:
+        logger.warning("Couldn't unblock %s: %s", hci, unblock.stderr.strip())
+        return False
+    return True
+
+def _rfkill_id(listing, hci):
+    """Finds the id on a line such as "0: hci0: Bluetooth"."""
+    for line in listing.splitlines():
+        fields = line.split(":")
+        if len(fields) >= 2 and fields[1].strip() == hci:
+            return fields[0].strip()
+    return None
 
 def disable_adapter(hci):
     """Set the HCI's Powered attribute to false"""

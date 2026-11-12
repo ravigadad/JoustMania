@@ -2,6 +2,7 @@ from enum import Enum, Flag, IntEnum
 import psmoveapi
 import time
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -160,3 +161,10 @@ REQUIRED_SETTINGS = [
     'random_team_size',
     'force_all_start',
 ]
+
+
+def allow_everyone_to_edit(path):
+    try:
+        os.chmod(path, 0o666)
+    except OSError as error:
+        logger.warning("Couldn't make %s editable by everyone: %s", path, error)

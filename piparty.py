@@ -46,6 +46,7 @@ from colors import Colors
 from common import Button, Games, Status, Sensitivity
 import yaml
 import time, random, os.path
+import subprocess
 from datetime import datetime
 from piaudio import Music, Audio, InitAudio, speak
 from enum import Enum
@@ -125,6 +126,13 @@ class Selections(Enum):
     FORCE_START_GAME = 11       # force start (from admin move)
 
 # Process running for each move to track that move while in the menu
+def configure_asound():
+    """Writes /etc/asound.conf for the sound card, before audio starts using it."""
+    result = subprocess.run(["sudo", "./update_asound.sh"])
+    if result.returncode != 0:
+        logger.warning("update_asound.sh failed with exit status %s", result.returncode)
+
+
 def track_move(serial, move_num, controller, menu_opts, force_color, battery, dead_count, restart, menu, kill_proc):
     # Set up move color
     controller.set_color(0, 0, 0)
@@ -1006,7 +1014,7 @@ class Menu():
         #let's leave it as root only, people shouldn't
         #mess with the config file for now
         if platform == "linux" or platform == "linux2":
-            os.system('chmod 666 %s' % common.SETTINGSFILE)
+            common.allow_everyone_to_edit(common.SETTINGSFILE)
 
 
     #Update the settings[key] with value
@@ -1329,9 +1337,8 @@ if __name__ == "__main__":
         print(pairing_notice)
     if platform == "linux" or platform == "linux2":
         print("updating asound")
-        os.popen("sudo ./update_asound.sh")
+        configure_asound()
     print("starting audio")
-    time.sleep(1)
     InitAudio()
     piparty = Menu()
     webui_browser.start(webui.web_urls()[0], piparty.ns.webui_launch_id, piparty.web_proc.is_alive)
